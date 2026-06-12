@@ -416,108 +416,102 @@ String getWebPanel() {
 <body>
     <div class="container">
         <header>
-            <h1>🏭 کنترل پنل کارخانه سپند</h1>
-            <p>سیستم اتوماسیون و امنیتی</p>
+            <h1>[PLANT] Control Panel</h1>
+            <p>Factory Automation and Security System</p>
         </header>
 
         <div class="status-bar">
             <div class="status-card">
-                <h3>🌡️ دما</h3>
-                <div class="status-value" id="temp">--°C</div>
+                <h3>Temperature</h3>
+                <div class="status-value" id="temp">--C</div>
             </div>
             <div class="status-card">
-                <h3>💧 رطوبت</h3>
+                <h3>Humidity</h3>
                 <div class="status-value" id="humidity">--%</div>
             </div>
             <div class="status-card">
-                <h3>🚪 درب</h3>
-                <div class="status-value" id="door_status">بسته ✓</div>
+                <h3>Door</h3>
+                <div class="status-value" id="door_status">Closed</div>
             </div>
             <div class="status-card">
-                <h3>🛡️ حالت</h3>
-                <div class="status-value" id="mode_status">کار فعال</div>
+                <h3>Mode</h3>
+                <div class="status-value" id="mode_status">Work Mode</div>
             </div>
             <div class="status-card">
-                <h3>⚠️ آژیر</h3>
-                <div class="status-value" id="alarm_status">خاموش</div>
+                <h3>Alarm</h3>
+                <div class="status-value" id="alarm_status">Off</div>
             </div>
             <div class="status-card">
-                <h3>📡 اتصال</h3>
-                <div class="status-value" id="connection_status" style="color: #27ae60;">متصل ✓</div>
+                <h3>Connection</h3>
+                <div class="status-value" id="connection_status" style="color: #27ae60;">Connected</div>
             </div>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('dashboard')">📊 داشبورد</button>
-            <button class="tab-btn" onclick="showTab('relays')">💡 کنترل رله‌ها</button>
-            <button class="tab-btn" onclick="showTab('security')">🛡️ تنظیمات امنیتی</button>
-            <button class="tab-btn" onclick="showTab('sensors')">📈 سنسورها</button>
-            <button class="tab-btn" onclick="showTab('log')">📋 سابقه</button>
-            <button class="tab-btn" onclick="showTab('settings')">⚙️ تنظیمات</button>
+            <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="showTab('relays')">Control Relays</button>
+            <button class="tab-btn" onclick="showTab('security')">Security Settings</button>
+            <button class="tab-btn" onclick="showTab('sensors')">Sensors</button>
+            <button class="tab-btn" onclick="showTab('log')">Log</button>
+            <button class="tab-btn" onclick="showTab('settings')">Settings</button>
         </div>
 
-        <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <div class="mode-selector">
-                <h3>انتخاب حالت</h3>
-                <button class="mode-btn active" id="work-mode-btn" onclick="setMode('work')">💼 حالت کار</button>
-                <button class="mode-btn" id="security-mode-btn" onclick="setMode('security')">🛡️ حالت امنیتی</button>
+                <h3>Select Mode</h3>
+                <button class="mode-btn active" id="work-mode-btn" onclick="setMode('work')">Work Mode</button>
+                <button class="mode-btn" id="security-mode-btn" onclick="setMode('security')">Security Mode</button>
             </div>
         </div>
 
-        <!-- Relays Control Tab -->
         <div id="relays" class="tab-content">
-            <h3>کنترل رله‌ها</h3>
+            <h3>Control Relays</h3>
             <div class="relay-grid" id="relay-grid"></div>
         </div>
 
-        <!-- Security Settings Tab -->
         <div id="security" class="tab-content">
-            <h3>تنظیمات امنیتی</h3>
-            <p>انتخاب کنید کدام رله‌ها در صورت تشخیص خطر فعال شوند:</p>
+            <h3>Security Settings</h3>
+            <p>Select which relays trigger on security alert:</p>
             <div class="security-grid" id="security-grid"></div>
         </div>
 
-        <!-- Sensors Tab -->
         <div id="sensors" class="tab-content">
-            <h3>نمایش سنسورها</h3>
+            <h3>Sensor Data</h3>
             <div class="sensor-data" id="sensor-data"></div>
         </div>
 
-        <!-- Log Tab -->
         <div id="log" class="tab-content">
-            <h3>سابقه رویدادها</h3>
+            <h3>Event Log</h3>
             <table class="log-table" id="log-table">
                 <thead>
                     <tr>
-                        <th>زمان</th>
-                        <th>نوع رویداد</th>
-                        <th>دستگاه</th>
-                        <th>رله</th>
-                        <th>مدت زمان</th>
+                        <th>Time</th>
+                        <th>Event Type</th>
+                        <th>Device</th>
+                        <th>Relay</th>
+                        <th>Duration</th>
                     </tr>
                 </thead>
                 <tbody id="log-body"></tbody>
             </table>
         </div>
 
-        <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-            <h3>تنظیمات</h3>
-            <h4>تنظیمات WiFi</h4>
+            <h3>Settings</h3>
+            <h4>WiFi Settings</h4>
             <div>
                 <label>SSID:</label>
-                <input type="text" id="wifi_ssid" placeholder="نام شبکه WiFi">
+                <input type="text" id="wifi_ssid" placeholder="WiFi Network Name">
             </div>
             <div>
-                <label>رمز عبور:</label>
-                <input type="password" id="wifi_password" placeholder="رمز عبور">
+                <label>Password:</label>
+                <input type="password" id="wifi_password" placeholder="WiFi Password">
             </div>
             <div>
-                <label>IP ثابت:</label>
+                <label>Static IP:</label>
                 <input type="text" id="device_ip" placeholder="192.168.1.100" value="192.168.1.100">
             </div>
-            <button onclick="saveWiFiSettings()">💾 ذخیره تنظیمات WiFi</button>
+            <button onclick="saveWiFiSettings()">Save WiFi Settings</button>
         </div>
     </div>
 
@@ -539,15 +533,14 @@ String getWebPanel() {
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('temp').textContent = data.temperature.toFixed(1) + '°C';
+                    document.getElementById('temp').textContent = data.temperature.toFixed(1) + 'C';
                     document.getElementById('humidity').textContent = data.humidity.toFixed(1) + '%';
-                    document.getElementById('door_status').textContent = data.door_open ? '🔴 باز' : '🟢 بسته';
+                    document.getElementById('door_status').textContent = data.door_open ? 'Open' : 'Closed';
                     document.getElementById('door_status').className = data.door_open ? 'status-value danger' : 'status-value';
-                    document.getElementById('mode_status').textContent = data.security_mode ? '🛡️ امنیتی' : '💼 کار';
-                    document.getElementById('alarm_status').textContent = data.alarm_active ? '🔊 فعال' : '🔇 خاموش';
+                    document.getElementById('mode_status').textContent = data.security_mode ? 'Security' : 'Work';
+                    document.getElementById('alarm_status').textContent = data.alarm_active ? 'Active' : 'Off';
                     document.getElementById('alarm_status').className = data.alarm_active ? 'status-value danger' : 'status-value';
 
-                    // به‌روز کردن رله‌ها
                     const relayGrid = document.getElementById('relay-grid');
                     relayGrid.innerHTML = '';
                     data.relays.forEach(relay => {
@@ -555,7 +548,7 @@ String getWebPanel() {
                         relayCard.className = 'relay-card' + (relay.state ? ' on' : '');
                         relayCard.innerHTML = `
                             <h4>${relay.name}</h4>
-                            <p>رله #${relay.id + 1}</p>
+                            <p>Relay #${relay.id + 1}</p>
                             <button class="relay-toggle ${relay.state ? 'on' : ''}" onclick="toggleRelay(${relay.id})"></button>
                         `;
                         relayGrid.appendChild(relayCard);
@@ -597,7 +590,7 @@ String getWebPanel() {
             const ip = document.getElementById('device_ip').value;
 
             if (!ssid || !password) {
-                alert('لطفاً SSID و رمز عبور را وارد کنید');
+                alert('Please enter SSID and password');
                 return;
             }
 
@@ -608,7 +601,7 @@ String getWebPanel() {
             })
             .then(response => response.json())
             .then(data => {
-                alert('تنظیمات ذخیره شد. دستگاه دوباره راه‌اندازی می‌شود...');
+                alert('Settings saved. Device is restarting...');
             })
             .catch(error => console.error('Error:', error));
         }
@@ -621,13 +614,13 @@ String getWebPanel() {
                     logBody.innerHTML = '';
                     data.logs.forEach(log => {
                         const row = document.createElement('tr');
-                        const date = new Date(log.timestamp * 1000).toLocaleString('fa-IR');
+                        const date = new Date(log.timestamp * 1000).toLocaleString();
                         row.innerHTML = `
                             <td>${date}</td>
                             <td>${log.event_type}</td>
-                            <td>دستگاه ${log.device_id}</td>
-                            <td>${log.relay_id >= 0 ? 'رله ' + (log.relay_id + 1) : '-'}</td>
-                            <td>${log.trigger_minutes} دقیقه</td>
+                            <td>Device ${log.device_id}</td>
+                            <td>${log.relay_id >= 0 ? 'Relay ' + (log.relay_id + 1) : '-'}</td>
+                            <td>${log.trigger_minutes} min</td>
                         `;
                         logBody.appendChild(row);
                     });
@@ -635,7 +628,6 @@ String getWebPanel() {
                 .catch(error => console.error('Error:', error));
         }
 
-        // به‌روز رسانی هر 2 ثانیه
         updateStatus();
         loadLog();
         setInterval(updateStatus, 2000);
