@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include <time.h>
 
-// ============ تنظیمات WiFi ============
+// ============ WiFi Settings ============
 const char* AP_SSID = "ESP32_FACTORY_AP";
 const char* AP_PASSWORD = "12345678";
 const char* AP_IP = "192.168.4.1";
@@ -16,22 +16,21 @@ char device_static_ip[16] = "192.168.1.100";
 char device_gateway[16] = "192.168.1.1";
 char device_subnet[16] = "255.255.255.0";
 
-// ============ تنظیمات Web Panel ============
+// ============ Web Panel Settings ============
 char panel_username[32] = "admin";
 char panel_password[32] = "12345";
 
-// ============ تنظیمات سنسورها و رله‌ها ============
+// ============ Sensor and Relay Settings ============
 #define DHT_PIN 4
 #define DHT_TYPE DHT22
 DHT dht(DHT_PIN, DHT_TYPE);
 
 #define DOOR_SWITCH_PIN 5
-#define ALARM_RELAY_PIN 12  // رله ۱ - آژیر
+#define ALARM_RELAY_PIN 12
 
-// رله‌های دیگر (پین‌های ۱۶ کانالی)
 const int RELAY_PINS[16] = {13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33, 34};
 
-// ============ تنظیمات سیستم ============
+// ============ System Settings ============
 #define EEPROM_SIZE 4096
 #define WIFI_CONFIG_ADDR 0
 #define RELAY_CONFIG_ADDR 512
@@ -47,13 +46,13 @@ WebServer server(80);
 struct RelayConfig {
   char name[32];
   bool active;
-  int trigger_time; // به دقیقه
+  int trigger_time;
 };
 
 struct SecurityEvent {
   uint32_t timestamp;
-  char event_type[20]; // door_open, laser_trigger
-  int device_id; // 1: factory, 2: office, 3: yard
+  char event_type[20];
+  int device_id;
   int relay_id;
   int trigger_minutes;
 };
@@ -65,23 +64,20 @@ int event_count = 0;
 uint32_t alarm_end_time = 0;
 bool alarm_active = false;
 
-// ============ توابع EEPROM ============
+// ============ EEPROM Functions ============
 void loadEEPROMData() {
   EEPROM.begin(EEPROM_SIZE);
   
-  // بارگذاری تنظیمات WiFi
   EEPROM.readString(WIFI_CONFIG_ADDR, wifi_ssid, 32);
   EEPROM.readString(WIFI_CONFIG_ADDR + 32, wifi_password, 64);
   EEPROM.readString(WIFI_CONFIG_ADDR + 96, device_static_ip, 16);
   
-  // بارگذاری نام‌های رله‌ها
   for (int i = 0; i < 16; i++) {
     int addr = RELAY_CONFIG_ADDR + (i * 64);
     EEPROM.readString(addr, relays[i].name, 32);
     relays[i].active = EEPROM.read(addr + 32);
     relays[i].trigger_time = EEPROM.readInt(addr + 33);
     
-    // نام پیش‌فرض
     if (strlen(relays[i].name) == 0) {
       sprintf(relays[i].name, "Relay %d", i + 1);
     }
@@ -91,12 +87,10 @@ void loadEEPROMData() {
 void saveEEPROMData() {
   EEPROM.begin(EEPROM_SIZE);
   
-  // ذخیره تنظیمات WiFi
   EEPROM.writeString(WIFI_CONFIG_ADDR, wifi_ssid);
   EEPROM.writeString(WIFI_CONFIG_ADDR + 32, wifi_password);
   EEPROM.writeString(WIFI_CONFIG_ADDR + 96, device_static_ip);
   
-  // ذخیره نام‌های رله‌ها
   for (int i = 0; i < 16; i++) {
     int addr = RELAY_CONFIG_ADDR + (i * 64);
     EEPROM.writeString(addr, relays[i].name);
@@ -107,7 +101,7 @@ void saveEEPROMData() {
   EEPROM.commit();
 }
 
-// ============ توابع WiFi ============
+// ============ WiFi Functions ============
 void setupWiFiAP() {
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(
@@ -154,7 +148,7 @@ void setupWiFiSTA() {
   }
 }
 
-// ============ توابع رله ============
+// ============ Relay Functions ============
 void setRelayState(int relay_id, bool state) {
   if (relay_id >= 0 && relay_id < 16) {
     digitalWrite(RELAY_PINS[relay_id], state ? HIGH : LOW);
@@ -173,15 +167,14 @@ void triggerAlarm(int minutes) {
   
   alarm_active = true;
   alarm_end_time = millis() + (minutes * 60000);
-  setRelayState(0, true); // رله ۱ - آژیر
+  setRelayState(0, true);
   
   Serial.println("ALARM TRIGGERED FOR " + String(minutes) + " MINUTES");
 }
 
-// ============ توابع Log ============
+// ============ Log Functions ============
 void addEventLog(const char* event_type, int device_id, int relay_id, int trigger_minutes) {
   if (event_count >= 100) {
-    // حذف رویداد قدیمی‌ترین
     for (int i = 0; i < 99; i++) {
       event_log[i] = event_log[i + 1];
     }
@@ -212,7 +205,6 @@ void handleRoot() {
     return;
   }
   
-  // بازگرداندن صفحه اصلی
   server.send(200, "text/html", getWebPanel());
 }
 
@@ -237,11 +229,11 @@ void handleWiFiSetup() {
   
   String html = "<html><body>";
   html += "<h1>WiFi Setup</h1>";
-  html += "<form method='POST'>";
-  html += "<input type='text' name='ssid' placeholder='WiFi SSID' required>";
-  html += "<input type='password' name='password' placeholder='WiFi Password' required>";
-  html += "<input type='text' name='ip' placeholder='Static IP' value='192.168.1.100'>";
-  html += "<button type='submit'>Connect</button>";
+  html += "<form method=\"POST\">";
+  html += "<input type=\"text\" name=\"ssid\" placeholder=\"WiFi SSID\" required>";
+  html += "<input type=\"password\" name=\"password\" placeholder=\"WiFi Password\" required>";
+  html += "<input type=\"text\" name=\"ip\" placeholder=\"Static IP\" value=\"192.168.1.100\">";
+  html += "<button type=\"submit\">Connect</button>";
   html += "</form></body></html>";
   
   server.send(200, "text/html", html);
@@ -250,7 +242,7 @@ void handleWiFiSetup() {
 void handleGetStatus() {
   DynamicJsonDocument doc(2048);
   
-  doc["device_id"] = 1; // سالن تولید
+  doc["device_id"] = 1;
   doc["temperature"] = dht.readTemperature();
   doc["humidity"] = dht.readHumidity();
   doc["door_open"] = digitalRead(DOOR_SWITCH_PIN) == HIGH;
@@ -259,7 +251,6 @@ void handleGetStatus() {
   doc["alarm_active"] = alarm_active;
   doc["ip"] = WiFi.localIP().toString();
   
-  // وضعیت رله‌ها
   JsonArray relays_array = doc.createNestedArray("relays");
   for (int i = 0; i < 16; i++) {
     JsonObject relay = relays_array.createNestedObject();
@@ -362,280 +353,132 @@ void handleTriggerAlarm() {
 
 // ============ Web Panel HTML ============
 String getWebPanel() {
-  String html = R"(
-<!DOCTYPE html>
-<html dir="rtl" lang="fa">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>کنترل پنل کارخانه سپند</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Tahoma', sans-serif; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        header h1 { font-size: 28px; margin-bottom: 5px; }
-        .status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .status-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .status-card h3 { color: #2c3e50; margin-bottom: 10px; font-size: 14px; }
-        .status-value { font-size: 24px; font-weight: bold; color: #27ae60; }
-        .status-value.danger { color: #e74c3c; }
-        .status-value.warning { color: #f39c12; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 20px; background: white; border: 2px solid #bdc3c7; border-radius: 5px; cursor: pointer; font-size: 14px; }
-        .tab-btn.active { background: #3498db; color: white; border-color: #3498db; }
-        .tab-content { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-content.active { display: block; }
-        .relay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .relay-card { background: #f9f9f9; border: 2px solid #bdc3c7; border-radius: 8px; padding: 15px; }
-        .relay-card.on { background: #d5f4e6; border-color: #27ae60; }
-        .relay-card h4 { margin-bottom: 10px; color: #2c3e50; }
-        .relay-toggle { width: 50px; height: 30px; background: #bdc3c7; border: none; border-radius: 15px; cursor: pointer; position: relative; transition: 0.3s; }
-        .relay-toggle.on { background: #27ae60; }
-        .relay-toggle::after { content: ''; position: absolute; width: 26px; height: 26px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
-        .relay-toggle.on::after { left: 22px; }
-        .sensor-data { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .sensor-card { background: #ecf0f1; padding: 15px; border-radius: 8px; }
-        .sensor-card h4 { margin-bottom: 10px; color: #2c3e50; }
-        .sensor-value { font-size: 18px; font-weight: bold; color: #3498db; }
-        input, select, button { padding: 10px; margin: 5px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 14px; }
-        button { background: #3498db; color: white; border: none; cursor: pointer; }
-        button:hover { background: #2980b9; }
-        .mode-selector { margin-bottom: 20px; }
-        .mode-btn { padding: 10px 20px; margin: 5px; border: 2px solid #bdc3c7; background: white; border-radius: 5px; cursor: pointer; font-size: 14px; }
-        .mode-btn.active { background: #27ae60; color: white; border-color: #27ae60; }
-        .log-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .log-table th, .log-table td { padding: 10px; text-align: right; border-bottom: 1px solid #bdc3c7; }
-        .log-table th { background: #34495e; color: white; }
-        .security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .security-card { background: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; border-radius: 5px; }
-        .security-card label { display: block; margin: 10px 0; }
-        .security-card input { width: 100%; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>[PLANT] Control Panel</h1>
-            <p>Factory Automation and Security System</p>
-        </header>
-
-        <div class="status-bar">
-            <div class="status-card">
-                <h3>Temperature</h3>
-                <div class="status-value" id="temp">--C</div>
-            </div>
-            <div class="status-card">
-                <h3>Humidity</h3>
-                <div class="status-value" id="humidity">--%</div>
-            </div>
-            <div class="status-card">
-                <h3>Door</h3>
-                <div class="status-value" id="door_status">Closed</div>
-            </div>
-            <div class="status-card">
-                <h3>Mode</h3>
-                <div class="status-value" id="mode_status">Work Mode</div>
-            </div>
-            <div class="status-card">
-                <h3>Alarm</h3>
-                <div class="status-value" id="alarm_status">Off</div>
-            </div>
-            <div class="status-card">
-                <h3>Connection</h3>
-                <div class="status-value" id="connection_status" style="color: #27ae60;">Connected</div>
-            </div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
-            <button class="tab-btn" onclick="showTab('relays')">Control Relays</button>
-            <button class="tab-btn" onclick="showTab('security')">Security Settings</button>
-            <button class="tab-btn" onclick="showTab('sensors')">Sensors</button>
-            <button class="tab-btn" onclick="showTab('log')">Log</button>
-            <button class="tab-btn" onclick="showTab('settings')">Settings</button>
-        </div>
-
-        <div id="dashboard" class="tab-content active">
-            <div class="mode-selector">
-                <h3>Select Mode</h3>
-                <button class="mode-btn active" id="work-mode-btn" onclick="setMode('work')">Work Mode</button>
-                <button class="mode-btn" id="security-mode-btn" onclick="setMode('security')">Security Mode</button>
-            </div>
-        </div>
-
-        <div id="relays" class="tab-content">
-            <h3>Control Relays</h3>
-            <div class="relay-grid" id="relay-grid"></div>
-        </div>
-
-        <div id="security" class="tab-content">
-            <h3>Security Settings</h3>
-            <p>Select which relays trigger on security alert:</p>
-            <div class="security-grid" id="security-grid"></div>
-        </div>
-
-        <div id="sensors" class="tab-content">
-            <h3>Sensor Data</h3>
-            <div class="sensor-data" id="sensor-data"></div>
-        </div>
-
-        <div id="log" class="tab-content">
-            <h3>Event Log</h3>
-            <table class="log-table" id="log-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Event Type</th>
-                        <th>Device</th>
-                        <th>Relay</th>
-                        <th>Duration</th>
-                    </tr>
-                </thead>
-                <tbody id="log-body"></tbody>
-            </table>
-        </div>
-
-        <div id="settings" class="tab-content">
-            <h3>Settings</h3>
-            <h4>WiFi Settings</h4>
-            <div>
-                <label>SSID:</label>
-                <input type="text" id="wifi_ssid" placeholder="WiFi Network Name">
-            </div>
-            <div>
-                <label>Password:</label>
-                <input type="password" id="wifi_password" placeholder="WiFi Password">
-            </div>
-            <div>
-                <label>Static IP:</label>
-                <input type="text" id="device_ip" placeholder="192.168.1.100" value="192.168.1.100">
-            </div>
-            <button onclick="saveWiFiSettings()">Save WiFi Settings</button>
-        </div>
-    </div>
-
-    <script>
-        let relayStates = {};
-
-        function showTab(tabName) {
-            const contents = document.querySelectorAll('.tab-content');
-            const buttons = document.querySelectorAll('.tab-btn');
-            
-            contents.forEach(content => content.classList.remove('active'));
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        function updateStatus() {
-            fetch('/api/status')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('temp').textContent = data.temperature.toFixed(1) + 'C';
-                    document.getElementById('humidity').textContent = data.humidity.toFixed(1) + '%';
-                    document.getElementById('door_status').textContent = data.door_open ? 'Open' : 'Closed';
-                    document.getElementById('door_status').className = data.door_open ? 'status-value danger' : 'status-value';
-                    document.getElementById('mode_status').textContent = data.security_mode ? 'Security' : 'Work';
-                    document.getElementById('alarm_status').textContent = data.alarm_active ? 'Active' : 'Off';
-                    document.getElementById('alarm_status').className = data.alarm_active ? 'status-value danger' : 'status-value';
-
-                    const relayGrid = document.getElementById('relay-grid');
-                    relayGrid.innerHTML = '';
-                    data.relays.forEach(relay => {
-                        const relayCard = document.createElement('div');
-                        relayCard.className = 'relay-card' + (relay.state ? ' on' : '');
-                        relayCard.innerHTML = `
-                            <h4>${relay.name}</h4>
-                            <p>Relay #${relay.id + 1}</p>
-                            <button class="relay-toggle ${relay.state ? 'on' : ''}" onclick="toggleRelay(${relay.id})"></button>
-                        `;
-                        relayGrid.appendChild(relayCard);
-                        relayStates[relay.id] = relay.state;
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function toggleRelay(id) {
-            const newState = relayStates[id] ? 0 : 1;
-            fetch(`/api/set_relay?id=${id}&state=${newState}`)
-                .then(response => response.json())
-                .then(data => {
-                    updateStatus();
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function setMode(mode) {
-            fetch(`/api/set_mode?mode=${mode}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('work-mode-btn').classList.remove('active');
-                    document.getElementById('security-mode-btn').classList.remove('active');
-                    if (mode === 'work') {
-                        document.getElementById('work-mode-btn').classList.add('active');
-                    } else {
-                        document.getElementById('security-mode-btn').classList.add('active');
-                    }
-                    updateStatus();
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function saveWiFiSettings() {
-            const ssid = document.getElementById('wifi_ssid').value;
-            const password = document.getElementById('wifi_password').value;
-            const ip = document.getElementById('device_ip').value;
-
-            if (!ssid || !password) {
-                alert('Please enter SSID and password');
-                return;
-            }
-
-            fetch('/api/wifi_setup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `ssid=${ssid}&password=${password}&ip=${ip}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('Settings saved. Device is restarting...');
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function loadLog() {
-            fetch('/api/log')
-                .then(response => response.json())
-                .then(data => {
-                    const logBody = document.getElementById('log-body');
-                    logBody.innerHTML = '';
-                    data.logs.forEach(log => {
-                        const row = document.createElement('tr');
-                        const date = new Date(log.timestamp * 1000).toLocaleString();
-                        row.innerHTML = `
-                            <td>${date}</td>
-                            <td>${log.event_type}</td>
-                            <td>Device ${log.device_id}</td>
-                            <td>${log.relay_id >= 0 ? 'Relay ' + (log.relay_id + 1) : '-'}</td>
-                            <td>${log.trigger_minutes} min</td>
-                        `;
-                        logBody.appendChild(row);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        updateStatus();
-        loadLog();
-        setInterval(updateStatus, 2000);
-        setInterval(loadLog, 10000);
-    </script>
-</body>
-</html>
-  )";
+  String html = "<!DOCTYPE html>";
+  html += "<html dir=\"rtl\" lang=\"fa\"><head>";
+  html += "<meta charset=\"UTF-8\">";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+  html += "<title>Factory Control Panel</title>";
+  html += "<style>";
+  html += "* { margin: 0; padding: 0; box-sizing: border-box; }";
+  html += "body { font-family: Tahoma, sans-serif; background: #f5f5f5; }";
+  html += ".container { max-width: 1200px; margin: 0 auto; padding: 20px; }";
+  html += "header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }";
+  html += "header h1 { font-size: 28px; margin-bottom: 5px; }";
+  html += ".status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }";
+  html += ".status-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }";
+  html += ".status-card h3 { color: #2c3e50; margin-bottom: 10px; font-size: 14px; }";
+  html += ".status-value { font-size: 24px; font-weight: bold; color: #27ae60; }";
+  html += ".status-value.danger { color: #e74c3c; }";
+  html += ".tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }";
+  html += ".tab-btn { padding: 10px 20px; background: white; border: 2px solid #bdc3c7; border-radius: 5px; cursor: pointer; }";
+  html += ".tab-btn.active { background: #3498db; color: white; border-color: #3498db; }";
+  html += ".tab-content { display: none; background: white; padding: 20px; border-radius: 8px; }";
+  html += ".tab-content.active { display: block; }";
+  html += ".relay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }";
+  html += ".relay-card { background: #f9f9f9; border: 2px solid #bdc3c7; border-radius: 8px; padding: 15px; }";
+  html += ".relay-card.on { background: #d5f4e6; border-color: #27ae60; }";
+  html += ".relay-toggle { width: 50px; height: 30px; background: #bdc3c7; border: none; border-radius: 15px; cursor: pointer; }";
+  html += "input, button { padding: 10px; margin: 5px; border: 1px solid #bdc3c7; border-radius: 5px; }";
+  html += "button { background: #3498db; color: white; border: none; cursor: pointer; }";
+  html += ".mode-btn { padding: 10px 20px; margin: 5px; border: 2px solid #bdc3c7; background: white; cursor: pointer; }";
+  html += ".mode-btn.active { background: #27ae60; color: white; border-color: #27ae60; }";
+  html += ".log-table { width: 100%; border-collapse: collapse; margin-top: 20px; }";
+  html += ".log-table th, .log-table td { padding: 10px; text-align: right; border-bottom: 1px solid #bdc3c7; }";
+  html += ".log-table th { background: #34495e; color: white; }";
+  html += "</style></head><body>";
+  html += "<div class=\"container\"><header>";
+  html += "<h1>Factory Control Panel</h1>";
+  html += "<p>Automation and Security System</p>";
+  html += "</header>";
+  
+  html += "<div class=\"status-bar\">";
+  html += "<div class=\"status-card\"><h3>Temperature</h3><div class=\"status-value\" id=\"temp\">--C</div></div>";
+  html += "<div class=\"status-card\"><h3>Humidity</h3><div class=\"status-value\" id=\"humidity\">--%</div></div>";
+  html += "<div class=\"status-card\"><h3>Door</h3><div class=\"status-value\" id=\"door_status\">Closed</div></div>";
+  html += "<div class=\"status-card\"><h3>Mode</h3><div class=\"status-value\" id=\"mode_status\">Work</div></div>";
+  html += "<div class=\"status-card\"><h3>Alarm</h3><div class=\"status-value\" id=\"alarm_status\">Off</div></div>";
+  html += "<div class=\"status-card\"><h3>Connection</h3><div class=\"status-value\" id=\"connection_status\" style=\"color: #27ae60;\">Connected</div></div>";
+  html += "</div>";
+  
+  html += "<div class=\"tabs\">";
+  html += "<button class=\"tab-btn active\" onclick=\"showTab(event, 'dashboard')\">Dashboard</button>";
+  html += "<button class=\"tab-btn\" onclick=\"showTab(event, 'relays')\">Relays</button>";
+  html += "<button class=\"tab-btn\" onclick=\"showTab(event, 'security')\">Security</button>";
+  html += "<button class=\"tab-btn\" onclick=\"showTab(event, 'sensors')\">Sensors</button>";
+  html += "<button class=\"tab-btn\" onclick=\"showTab(event, 'log')\">Log</button>";
+  html += "<button class=\"tab-btn\" onclick=\"showTab(event, 'settings')\">Settings</button>";
+  html += "</div>";
+  
+  html += "<div id=\"dashboard\" class=\"tab-content active\">";
+  html += "<h3>Select Mode</h3>";
+  html += "<button class=\"mode-btn active\" id=\"work-mode-btn\" onclick=\"setMode(event, 'work')\">Work Mode</button>";
+  html += "<button class=\"mode-btn\" id=\"security-mode-btn\" onclick=\"setMode(event, 'security')\">Security Mode</button>";
+  html += "</div>";
+  
+  html += "<div id=\"relays\" class=\"tab-content\"><h3>Control Relays</h3><div class=\"relay-grid\" id=\"relay-grid\"></div></div>";
+  html += "<div id=\"security\" class=\"tab-content\"><h3>Security Settings</h3><div id=\"security-grid\"></div></div>";
+  html += "<div id=\"sensors\" class=\"tab-content\"><h3>Sensors</h3><div id=\"sensor-data\"></div></div>";
+  
+  html += "<div id=\"log\" class=\"tab-content\"><h3>Event Log</h3>";
+  html += "<table class=\"log-table\"><thead><tr><th>Time</th><th>Event</th><th>Device</th><th>Relay</th><th>Duration</th></tr></thead>";
+  html += "<tbody id=\"log-body\"></tbody></table></div>";
+  
+  html += "<div id=\"settings\" class=\"tab-content\"><h3>Settings</h3>";
+  html += "<label>SSID:</label><input type=\"text\" id=\"wifi_ssid\" placeholder=\"WiFi Name\">";
+  html += "<label>Password:</label><input type=\"password\" id=\"wifi_password\" placeholder=\"WiFi Password\">";
+  html += "<label>Static IP:</label><input type=\"text\" id=\"device_ip\" placeholder=\"192.168.1.100\" value=\"192.168.1.100\">";
+  html += "<button onclick=\"saveWiFiSettings(event)\">Save WiFi Settings</button>";
+  html += "</div>";
+  
+  html += "</div><script>";
+  html += "let relayStates = {};";
+  html += "function showTab(evt, name) { ";
+  html += "var i, tabcontent, tablinks; ";
+  html += "tabcontent = document.getElementsByClassName('tab-content'); ";
+  html += "for (i = 0; i < tabcontent.length; i++) { tabcontent[i].classList.remove('active'); } ";
+  html += "tablinks = document.getElementsByClassName('tab-btn'); ";
+  html += "for (i = 0; i < tablinks.length; i++) { tablinks[i].classList.remove('active'); } ";
+  html += "document.getElementById(name).classList.add('active'); ";
+  html += "evt.currentTarget.classList.add('active'); }";
+  html += "function updateStatus() { ";
+  html += "fetch('/api/status').then(r => r.json()).then(d => { ";
+  html += "document.getElementById('temp').textContent = d.temperature.toFixed(1) + 'C'; ";
+  html += "document.getElementById('humidity').textContent = d.humidity.toFixed(1) + '%'; ";
+  html += "document.getElementById('door_status').textContent = d.door_open ? 'Open' : 'Closed'; ";
+  html += "document.getElementById('mode_status').textContent = d.security_mode ? 'Security' : 'Work'; ";
+  html += "document.getElementById('alarm_status').textContent = d.alarm_active ? 'Active' : 'Off'; ";
+  html += "var rg = document.getElementById('relay-grid'); rg.innerHTML = ''; ";
+  html += "d.relays.forEach(r => { ";
+  html += "var rc = document.createElement('div'); ";
+  html += "rc.className = 'relay-card' + (r.state ? ' on' : ''); ";
+  html += "rc.innerHTML = '<h4>' + r.name + '</h4><p>Relay ' + (r.id+1) + '</p><button class=\"relay-toggle ' + (r.state ? 'on' : '') + '\" onclick=\"toggleRelay(' + r.id + ')\"></button>'; ";
+  html += "rg.appendChild(rc); relayStates[r.id] = r.state; }); }); }";
+  html += "function toggleRelay(id) { ";
+  html += "var s = relayStates[id] ? 0 : 1; ";
+  html += "fetch('/api/set_relay?id=' + id + '&state=' + s).then(r => r.json()).then(d => { updateStatus(); }); }";
+  html += "function setMode(evt, m) { ";
+  html += "fetch('/api/set_mode?mode=' + m).then(r => r.json()).then(d => { ";
+  html += "document.getElementById('work-mode-btn').classList.remove('active'); ";
+  html += "document.getElementById('security-mode-btn').classList.remove('active'); ";
+  html += "if(m === 'work') document.getElementById('work-mode-btn').classList.add('active'); ";
+  html += "else document.getElementById('security-mode-btn').classList.add('active'); ";
+  html += "updateStatus(); evt.currentTarget.classList.add('active'); }); }";
+  html += "function saveWiFiSettings(evt) { ";
+  html += "var s = document.getElementById('wifi_ssid').value; ";
+  html += "var p = document.getElementById('wifi_password').value; ";
+  html += "var i = document.getElementById('device_ip').value; ";
+  html += "if(!s || !p) { alert('Enter SSID and password'); return; } ";
+  html += "fetch('/api/wifi_setup', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'ssid=' + s + '&password=' + p + '&ip=' + i }).then(r => r.json()).then(d => { alert('Settings saved'); }); }";
+  html += "function loadLog() { ";
+  html += "fetch('/api/log').then(r => r.json()).then(d => { ";
+  html += "var lb = document.getElementById('log-body'); lb.innerHTML = ''; ";
+  html += "d.logs.forEach(l => { var tr = document.createElement('tr'); ";
+  html += "var dt = new Date(l.timestamp*1000).toLocaleString(); ";
+  html += "tr.innerHTML = '<td>' + dt + '</td><td>' + l.event_type + '</td><td>Device ' + l.device_id + '</td><td>' + (l.relay_id >= 0 ? 'Relay ' + (l.relay_id+1) : '-') + '</td><td>' + l.trigger_minutes + ' min</td>'; ";
+  html += "lb.appendChild(tr); }); }); }";
+  html += "updateStatus(); loadLog(); setInterval(updateStatus, 2000); setInterval(loadLog, 10000);";
+  html += "</script></body></html>";
+  
   return html;
 }
 
@@ -646,23 +489,16 @@ void setup() {
   
   Serial.println("\n\n===== Factory Control System Starting =====");
   
-  // تنظیم پین‌ها
   pinMode(DOOR_SWITCH_PIN, INPUT_PULLUP);
   for (int i = 0; i < 16; i++) {
     pinMode(RELAY_PINS[i], OUTPUT);
     digitalWrite(RELAY_PINS[i], LOW);
   }
   
-  // شروع سنسور DHT22
   dht.begin();
-  
-  // بارگذاری داده‌های EEPROM
   loadEEPROMData();
-  
-  // تنظیم WiFi
   setupWiFiSTA();
   
-  // تنظیم Web Server
   server.on("/", handleRoot);
   server.on("/api/status", handleGetStatus);
   server.on("/api/set_relay", handleSetRelay);
@@ -676,7 +512,6 @@ void setup() {
   server.begin();
   Serial.println("Web Server started");
   
-  // اضافه کردن رویداد شروع
   addEventLog("system_started", 1, -1, 0);
 }
 
@@ -684,20 +519,18 @@ void setup() {
 void loop() {
   server.handleClient();
   
-  // بررسی آژیر
   if (alarm_active && millis() > alarm_end_time) {
     alarm_active = false;
     setRelayState(0, false);
     Serial.println("ALARM STOPPED");
   }
   
-  // بررسی درب
   static bool last_door_state = false;
   bool current_door_state = digitalRead(DOOR_SWITCH_PIN) == HIGH;
   if (current_door_state != last_door_state) {
     if (current_door_state && SECURITY_MODE) {
       addEventLog("door_opened", 1, -1, 0);
-      triggerAlarm(1); // آژیر برای ۱ دقیقه
+      triggerAlarm(1);
     }
     last_door_state = current_door_state;
   }
